@@ -783,6 +783,18 @@ function doGet(e) {
 
 </main>
 
+<!-- MODAL PENDENTES -->
+<div class="modal-overlay" id="modal-pendentes">
+  <div class="modal">
+    <h3>⚠️ Dados não sincronizados</h3>
+    <p style="color:var(--muted);font-size:0.82rem;line-height:1.6">Você tem <strong id="pendentes-count" style="color:var(--accent)"></strong> venda(s) com bolinha vermelha — ainda não enviadas para o Google Sheets. Deseja sincronizar agora?</p>
+    <div class="modal-btns" style="margin-top:20px">
+      <button class="btn-secondary" style="margin:0" onclick="document.getElementById('modal-pendentes').classList.remove('open')">Agora não</button>
+      <button class="btn-primary" style="margin:0" onclick="document.getElementById('modal-pendentes').classList.remove('open');sincronizarTudo()">Sincronizar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL IMPORTAR -->
 <div class="modal-overlay" id="modal-import">
   <div class="modal">
@@ -880,6 +892,7 @@ function doGet(e) {
       if (idx !== -1) vendas[idx] = { ...venda, synced: false };
       cancelarEdicao();
       toast('Venda atualizada ✓');
+      setTimeout(() => sincronizarVendaSilenciosa(venda), 300);
     } else {
       vendas.push(venda);
       toast('Venda registrada ✓');
@@ -1151,6 +1164,7 @@ function doGet(e) {
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('login-error').textContent = '';
       setTimeout(verificarImportAoAbrir, 600);
+      setTimeout(verificarPendentesAoAbrir, 1200);
     } else {
       document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
       document.getElementById('login-input').value = '';
@@ -1165,6 +1179,7 @@ function doGet(e) {
 
   verificarLogin();
   verificarImportAoAbrir();
+  verificarPendentesAoAbrir();
 
   // ── IMPORTAR DO SHEETS ────────────────────────────
   function abrirImport() {
@@ -1240,6 +1255,17 @@ function doGet(e) {
   }
 
   // Mostra popup de importação ao abrir (uma vez por sessão)
+  function verificarPendentesAoAbrir() {
+    if (!gsUrl) return;
+    const pendentes = vendas.filter(v => !v.synced);
+    if (pendentes.length > 0) {
+      document.getElementById('pendentes-count').textContent = pendentes.length;
+      setTimeout(() => {
+        document.getElementById('modal-pendentes').classList.add('open');
+      }, 1000);
+    }
+  }
+
   function verificarImportAoAbrir() {
     if (!gsUrl) return;
     const skipped = sessionStorage.getItem('importSkipped');
