@@ -745,6 +745,12 @@ function doGet(e) {
     </div>
 
     <div class="config-card">
+      <h3>Importar dados do Sheets</h3>
+      <p style="font-size:0.78rem;color:var(--muted);margin-bottom:16px;line-height:1.6">Sincroniza as vendas do Google Sheets para este dispositivo. Use ao trocar de aparelho ou após registrar vendas em outro dispositivo.</p>
+      <button class="btn-primary" onclick="abrirImport()">📥 Importar dados agora</button>
+    </div>
+
+    <div class="config-card">
       <h3>Alterar senha de acesso</h3>
       <p>A senha padrão é <strong style="color:var(--accent)">vendas3d</strong>. Troque por uma senha pessoal.</p>
       <div class="field">
@@ -776,6 +782,18 @@ function doGet(e) {
   </div>
 
 </main>
+
+<!-- MODAL IMPORTAR -->
+<div class="modal-overlay" id="modal-import">
+  <div class="modal">
+    <h3>📥 Sincronizar dados</h3>
+    <p style="color:var(--muted);font-size:0.82rem;line-height:1.6">Para ver as vendas de outros dispositivos, importe os dados do Google Sheets agora. Uma aba será aberta e fechada automaticamente.</p>
+    <div class="modal-btns">
+      <button class="btn-secondary" style="margin:0" onclick="fecharImport()">Agora não</button>
+      <button class="btn-primary" style="margin:0" onclick="importarDoSheets()">Importar agora</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL EDITAR -->
 <div class="modal-overlay" id="modal-delete">
@@ -1100,6 +1118,7 @@ function doGet(e) {
       sessionStorage.setItem('logado3d', 'sim');
       document.getElementById('login-screen').classList.add('hidden');
       document.getElementById('login-error').textContent = '';
+      setTimeout(verificarImportAoAbrir, 600);
     } else {
       document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
       document.getElementById('login-input').value = '';
@@ -1113,6 +1132,73 @@ function doGet(e) {
   }
 
   verificarLogin();
+  verificarImportAoAbrir();
+
+  // ── IMPORTAR DO SHEETS ────────────────────────────
+  function abrirImport() {
+    if (!gsUrl) { toast('Configure o Google Sheets primeiro!', true); return; }
+    document.getElementById('modal-import').classList.add('open');
+  }
+
+  function fecharImport() {
+    document.getElementById('modal-import').classList.remove('open');
+    sessionStorage.setItem('importSkipped', 'sim');
+  }
+
+  function importarDoSheets() {
+    if (!gsUrl) { toast('Configure o Google Sheets primeiro!', true); return; }
+    document.getElementById('modal-import').classList.remove('open');
+    const url = gsUrl + '?action=importar';
+    const win = window.open(url, '_blank');
+    toast('Importando dados...');
+
+    // Poll for data via localStorage bridge
+    let tentativas = 0;
+    const maxTentativas = 30;
+    const intervalo = setInterval(() => {
+      tentativas++;
+      const dados = localStorage.getItem('sheetsImport');
+      if (dados) {
+        clearInterval(intervalo);
+        localStorage.removeItem('sheetsImport');
+        if (win && !win.closed) win.close();
+        try {
+          const importadas = JSON.parse(dados);
+          let novas = 0;
+          importadas.forEach(v => {
+            if (!vendas.find(x => x.id === v.id)) {
+              vendas.push(v);
+              novas++;
+            }
+          });
+          salvarLocal();
+          updateDashboard();
+          renderVendas();
+          toast(novas + ' venda(s) importada(s) ✓');
+        } catch(e) {
+          toast('Erro ao importar dados', true);
+        }
+      }
+      if (tentativas >= maxTentativas) {
+        clearInterval(intervalo);
+        if (win && !win.closed) win.close();
+        // Fallback: just open the URL and ask user to copy
+        toast('Abra a aba e copie os dados manualmente se necessário', true);
+      }
+    }, 1000);
+  }
+
+  // Mostra popup de importação ao abrir (uma vez por sessão)
+  function verificarImportAoAbrir() {
+    if (!gsUrl) return;
+    const skipped = sessionStorage.getItem('importSkipped');
+    const logado = sessionStorage.getItem('logado3d');
+    if (logado === 'sim' && !skipped) {
+      setTimeout(() => {
+        document.getElementById('modal-import').classList.add('open');
+      }, 800);
+    }
+  }
 
   function confirmarLimpar() {
     if (confirm('Tem certeza? Todos os dados locais serão apagados.')) {
