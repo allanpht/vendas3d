@@ -929,10 +929,6 @@
 
 
       <div class="calc-card">
-        <div class="calc-brow"><span>Custo filamento</span><span id="cb-filament">—</span></div>
-        <div class="calc-brow"><span>Custo energia</span><span id="cb-energy">—</span></div>
-
-        <div class="calc-brow total"><span>Preço de venda</span></div>
         <div class="calc-price-duo">
           <div class="calc-price-box">
             <div class="calc-price-box-label">Guaranis</div>
@@ -1100,6 +1096,10 @@ function doGet(e) {
   let gsUrl = localStorage.getItem('gsUrl') || '';
   let deleteTarget = null;
   let privacyOn = false;
+
+  // ── FIX DATAS ANTIGAS ─────────────────────────────
+  vendas = vendas.map(v => ({ ...v, data: normalizarData(v.data) }));
+  salvarLocal();
 
   // ── INIT ───────────────────────────────────────────
   document.getElementById('f-data').value = today();
