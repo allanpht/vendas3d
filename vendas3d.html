@@ -472,7 +472,6 @@
       <table>
         <thead>
           <tr>
-            <th></th>
             <th>Data</th>
             <th>Cliente</th>
             <th>Produto</th>
@@ -701,16 +700,15 @@ function doGet(e) {
     }
     tbody.innerHTML = lista.map(v => `
       <tr>
-        <td><span title="${v.synced ? 'Sincronizado' : 'Não sincronizado'}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${v.synced ? '#47ffd4' : '#ff4747'};box-shadow:0 0 5px ${v.synced ? '#47ffd4' : '#ff4747'}88"></span></td>
         <td>${formatDate(v.data)}</td>
         <td>${esc(v.cliente)}</td>
         <td>${esc(v.produto)}</td>
         <td><span class="td-qty">${v.qtd}</span></td>
         <td class="td-valor">R$ ${parseFloat(v.valor).toFixed(2).replace('.',',')}</td>
-        <td>
-          <button class="btn-icon" title="Enviar para Sheets" onclick="sincronizarVenda(vendas.find(x=>x.id==='${v.id}'))">↑</button>
+        <td style="display:flex;align-items:center;gap:8px;padding-top:13px">
           <button class="btn-icon" onclick="editarVenda('${v.id}')">✏</button>
           <button class="btn-icon del" onclick="excluirVenda('${v.id}')">✕</button>
+          <span title="${v.synced ? 'Sincronizado com Sheets' : 'Não sincronizado'}" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${v.synced ? '#47ffd4' : '#ff4747'};box-shadow:0 0 5px ${v.synced ? '#47ffd4' : '#ff4747'}88;flex-shrink:0"></span>
         </td>
       </tr>
     `).join('');
@@ -803,6 +801,7 @@ function doGet(e) {
   function sincronizarVenda(venda) {
     if (!gsUrl) { toast('Configure o Google Sheets primeiro!', true); return; }
     const params = new URLSearchParams({
+      id: venda.id,
       data: venda.data,
       cliente: venda.cliente,
       produto: venda.produto,
@@ -835,6 +834,7 @@ function doGet(e) {
     for (let i = 0; i < naoSincronizadas.length; i++) {
       const venda = naoSincronizadas[i];
       const params = new URLSearchParams({
+        id: venda.id,
         data: venda.data,
         cliente: venda.cliente,
         produto: venda.produto,
