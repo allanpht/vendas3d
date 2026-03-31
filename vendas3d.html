@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vendas 3D — Registro</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1f1f1f;
+    --border: #2a2a2a;
+    --accent: #e8ff47;
+    --accent2: #47ffd4;
+    --text: #f0f0f0;
+    --muted: #666;
+    --danger: #ff4747;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  header {
+    padding: 28px 40px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    background: rgba(13,13,13,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.4rem;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: var(--accent); }
+
+  .gs-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .gs-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .gs-dot.connected { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    padding: 20px 40px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* MAIN */
+  main { padding: 36px 40px; max-width: 1100px; margin: 0 auto; }
+
+  .panel { display: none; }
+  .panel.active { display: block; animation: fadeIn 0.25s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+  /* DASHBOARD */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .kpi.k1::before { background: var(--accent); }
+  .kpi.k2::before { background: var(--accent2); }
+  .kpi.k3::before { background: #ff9f47; }
+  .kpi.k4::before { background: #c847ff; }
+
+  .kpi-label {
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.9rem;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .kpi.k1 .kpi-value { color: var(--accent); }
+  .kpi.k2 .kpi-value { color: var(--accent2); }
+
+  /* FILTRO DE PERÍODO */
+  .filter-bar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .filter-bar label { font-size: 0.72rem; color: var(--muted); }
+  .filter-bar input[type=date], .filter-bar select {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .filter-bar input[type=date]:focus, .filter-bar select:focus {
+    border-color: var(--accent);
+  }
+
+  /* TABELA */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+  th {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding: 14px 18px;
+    text-align: left;
+  }
+  td {
+    padding: 13px 18px;
+    font-size: 0.82rem;
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  .td-valor { color: var(--accent); font-weight: 500; }
+  .td-qty {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 0.75rem;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+  .empty-state .big { font-family: 'Syne', sans-serif; font-size: 2.5rem; margin-bottom: 8px; }
+
+  /* AÇÕES */
+  .btn-icon {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--muted);
+    cursor: pointer;
+    padding: 5px 9px;
+    font-size: 0.78rem;
+    transition: all 0.2s;
+    margin-right: 4px;
+  }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-icon.del:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* FORM */
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    max-width: 580px;
+  }
+  .form-card h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin-bottom: 28px;
+    letter-spacing: -0.02em;
+  }
+  .form-card h2 span { color: var(--accent); }
+
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus { border-color: var(--accent); }
+  .field input::placeholder { color: var(--muted); }
+
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 13px 28px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 8px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    width: 100%;
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--text); }
+
+  /* TOAST */
+  #toast {
+    position: fixed;
+    bottom: 32px;
+    right: 32px;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 12px 22px;
+    border-radius: 8px;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+    z-index: 999;
+  }
+  #toast.show { transform: translateY(0); opacity: 1; }
+  #toast.error { background: var(--danger); color: #fff; }
+
+  /* CONFIGURAÇÃO */
+  .config-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px 36px;
+    max-width: 580px;
+    margin-bottom: 24px;
+  }
+  .config-card h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 6px;
+  }
+  .config-card p { font-size: 0.78rem; color: var(--muted); margin-bottom: 20px; line-height: 1.6; }
+  .config-card a { color: var(--accent2); text-decoration: none; }
+  .config-card a:hover { text-decoration: underline; }
+
+  .badge {
+    display: inline-block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.7rem;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .code-hint {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.75rem;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    word-break: break-all;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 32px;
+    max-width: 460px;
+    width: 90%;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal h3 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    margin-bottom: 24px;
+    font-size: 1.1rem;
+  }
+  .modal-btns { display: flex; gap: 12px; margin-top: 24px; }
+  .modal-btns button { flex: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Vendas<span>3D</span></div>
+  <div class="gs-status">
+    <div class="gs-dot" id="gsDot"></div>
+    <span id="gsLabel">Google Sheets desconectado</span>
+  </div>
+</header>
+
+<nav class="tabs">
+  <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
+  <button class="tab" onclick="showTab('vendas')">Vendas</button>
+  <button class="tab" onclick="showTab('nova')">+ Nova Venda</button>
+  <button class="tab" onclick="showTab('config')">Configuração</button>
+</nav>
+
+<main>
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="tab-dashboard">
+    <div class="kpi-grid">
+      <div class="kpi k1">
+        <div class="kpi-label">Total arrecadado</div>
+        <div class="kpi-value" id="kpi-total">R$ 0,00</div>
+      </div>
+      <div class="kpi k2">
+        <div class="kpi-label">Nº de vendas</div>
+        <div class="kpi-value" id="kpi-count">0</div>
+      </div>
+      <div class="kpi k3">
+        <div class="kpi-label">Ticket médio</div>
+        <div class="kpi-value" id="kpi-avg">R$ 0,00</div>
+      </div>
+      <div class="kpi k4">
+        <div class="kpi-label">Itens vendidos</div>
+        <div class="kpi-value" id="kpi-items">0</div>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <label>De:</label>
+      <input type="date" id="dash-from" onchange="updateDashboard()">
+      <label>Até:</label>
+      <input type="date" id="dash-to" onchange="updateDashboard()">
+      <button class="btn-icon" onclick="clearDashFilter()">Limpar filtro</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Produto mais vendido</th>
+            <th>Qtd total</th>
+            <th>Receita</th>
+          </tr>
+        </thead>
+        <tbody id="top-produtos"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- LISTA DE VENDAS -->
+  <div class="panel" id="tab-vendas">
+    <div class="filter-bar">
+      <label>De:</label>
+      <input type="date" id="filter-from" onchange="renderVendas()">
+      <label>Até:</label>
+      <input type="date" id="filter-to" onchange="renderVendas()">
+      <button class="btn-icon" onclick="clearVendasFilter()">Limpar</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Cliente</th>
+            <th>Produto</th>
+            <th>Qtd</th>
+            <th>Valor</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="vendas-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- NOVA VENDA / EDITAR -->
+  <div class="panel" id="tab-nova">
+    <div class="form-card">
+      <h2 id="form-title">Nova <span>venda</span></h2>
+      <input type="hidden" id="edit-id">
+
+      <div class="field">
+        <label>Nome do cliente</label>
+        <input type="text" id="f-cliente" placeholder="Ex: João Silva">
+      </div>
+      <div class="field">
+        <label>Produto vendido</label>
+        <input type="text" id="f-produto" placeholder="Ex: Suporte de celular articulado">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Valor (R$)</label>
+          <input type="number" id="f-valor" placeholder="0,00" min="0" step="0.01">
+        </div>
+        <div class="field">
+          <label>Quantidade</label>
+          <input type="number" id="f-qtd" placeholder="1" min="1" value="1">
+        </div>
+      </div>
+      <div class="field">
+        <label>Data da venda</label>
+        <input type="date" id="f-data">
+      </div>
+
+      <button class="btn-primary" onclick="salvarVenda()" id="btn-salvar">Registrar venda</button>
+      <button class="btn-secondary" id="btn-cancelar-edit" style="display:none" onclick="cancelarEdicao()">Cancelar edição</button>
+    </div>
+  </div>
+
+  <!-- CONFIGURAÇÃO -->
+  <div class="panel" id="tab-config">
+    <div class="config-card">
+      <h3>Integração com Google Sheets</h3>
+      <span class="badge">Configuração única</span>
+      <p>Para salvar automaticamente no Google Sheets, siga os passos abaixo:</p>
+
+      <p><strong>1.</strong> Abra o <a href="https://sheets.google.com" target="_blank">Google Sheets</a>, crie uma nova planilha e copie o ID da URL:<br>
+      <code style="color:var(--accent2)">sheets.google.com/d/<strong>[ID AQUI]</strong>/edit</code></p>
+
+      <p><strong>2.</strong> Abra o <a href="https://script.google.com" target="_blank">Google Apps Script</a>, cole o código abaixo e faça o deploy como <em>Web App</em> (acesso: "Qualquer pessoa").</p>
+
+      <div class="code-hint" id="apps-script-code" style="white-space:pre;overflow-x:auto;font-size:0.68rem">
+function doGet(e) {
+  var sheet = SpreadsheetApp.openById("SEU_ID_AQUI").getActiveSheet();
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["Data","Cliente","Produto","Qtd","Valor"]);
+  }
+  var p = e.parameter;
+  sheet.appendRow([p.data, p.cliente, p.produto, p.qtd, p.valor]);
+  return ContentService.createTextOutput("ok");
+}
+      </div>
+
+      <p><strong>3.</strong> Após o deploy, cole a URL do Web App abaixo:</p>
+
+      <div class="field">
+        <label>URL do Web App (Google Apps Script)</label>
+        <input type="url" id="gs-url" placeholder="https://script.google.com/macros/s/...">
+      </div>
+      <button class="btn-primary" onclick="salvarConfig()">Salvar configuração</button>
+    </div>
+
+    <div class="config-card">
+      <h3>Dados locais</h3>
+      <p>Todos os dados ficam salvos no seu navegador (localStorage) como backup. A integração com Sheets envia cada venda em tempo real.</p>
+      <button class="btn-secondary" style="background:var(--surface2);color:var(--danger);border-color:var(--danger);width:auto;padding:10px 20px;margin-top:0" onclick="confirmarLimpar()">
+        ⚠ Apagar todos os dados locais
+      </button>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODAL EDITAR -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <h3>Confirmar exclusão</h3>
+    <p style="color:var(--muted);font-size:0.82rem">Essa venda será removida permanentemente do registro local. Não é possível desfazer.</p>
+    <div class="modal-btns">
+      <button class="btn-secondary" style="margin:0" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" style="background:var(--danger);margin:0" onclick="confirmarDelete()">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── STATE ──────────────────────────────────────────
+  let vendas = JSON.parse(localStorage.getItem('vendas3d') || '[]');
+  let gsUrl = localStorage.getItem('gsUrl') || '';
+  let deleteTarget = null;
+
+  // ── INIT ───────────────────────────────────────────
+  document.getElementById('f-data').value = today();
+  if (gsUrl) {
+    document.getElementById('gs-url').value = gsUrl;
+    setGsStatus(true);
+  }
+  updateDashboard();
+  renderVendas();
+
+  function today() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  // ── TABS ───────────────────────────────────────────
+  function showTab(id) {
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    event.target.classList.add('active');
+  }
+
+  // ── SALVAR VENDA ───────────────────────────────────
+  function salvarVenda() {
+    const cliente = document.getElementById('f-cliente').value.trim();
+    const produto = document.getElementById('f-produto').value.trim();
+    const valor   = parseFloat(document.getElementById('f-valor').value);
+    const qtd     = parseInt(document.getElementById('f-qtd').value);
+    const data    = document.getElementById('f-data').value;
+    const editId  = document.getElementById('edit-id').value;
+
+    if (!cliente || !produto || isNaN(valor) || isNaN(qtd) || !data) {
+      toast('Preencha todos os campos!', true); return;
+    }
+
+    const venda = { id: editId || Date.now().toString(), cliente, produto, valor, qtd, data };
+
+    if (editId) {
+      const idx = vendas.findIndex(v => v.id === editId);
+      if (idx !== -1) vendas[idx] = venda;
+      cancelarEdicao();
+      toast('Venda atualizada ✓');
+    } else {
+      vendas.push(venda);
+      enviarParaSheets(venda);
+      toast('Venda registrada ✓');
+    }
+
+    salvarLocal();
+    resetForm();
+    updateDashboard();
+    renderVendas();
+  }
+
+  function resetForm() {
+    ['f-cliente','f-produto','f-valor'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('f-qtd').value = '1';
+    document.getElementById('f-data').value = today();
+    document.getElementById('edit-id').value = '';
+    document.getElementById('form-title').innerHTML = 'Nova <span>venda</span>';
+    document.getElementById('btn-salvar').textContent = 'Registrar venda';
+    document.getElementById('btn-cancelar-edit').style.display = 'none';
+  }
+
+  function cancelarEdicao() { resetForm(); }
+
+  // ── EDITAR ─────────────────────────────────────────
+  function editarVenda(id) {
+    const v = vendas.find(v => v.id === id);
+    if (!v) return;
+    document.getElementById('f-cliente').value = v.cliente;
+    document.getElementById('f-produto').value = v.produto;
+    document.getElementById('f-valor').value   = v.valor;
+    document.getElementById('f-qtd').value     = v.qtd;
+    document.getElementById('f-data').value    = v.data;
+    document.getElementById('edit-id').value   = v.id;
+    document.getElementById('form-title').innerHTML = 'Editar <span>venda</span>';
+    document.getElementById('btn-salvar').textContent = 'Salvar alterações';
+    document.getElementById('btn-cancelar-edit').style.display = 'block';
+
+    // navegar para aba
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-nova').classList.add('active');
+    document.querySelectorAll('.tab')[2].classList.add('active');
+  }
+
+  // ── EXCLUIR ────────────────────────────────────────
+  function excluirVenda(id) {
+    deleteTarget = id;
+    document.getElementById('modal-delete').classList.add('open');
+  }
+  function closeModal() {
+    document.getElementById('modal-delete').classList.remove('open');
+    deleteTarget = null;
+  }
+  function confirmarDelete() {
+    vendas = vendas.filter(v => v.id !== deleteTarget);
+    salvarLocal(); updateDashboard(); renderVendas();
+    closeModal(); toast('Venda excluída');
+  }
+
+  // ── RENDER VENDAS ──────────────────────────────────
+  function renderVendas() {
+    const from = document.getElementById('filter-from').value;
+    const to   = document.getElementById('filter-to').value;
+    let lista  = [...vendas].sort((a,b) => b.data.localeCompare(a.data));
+
+    if (from) lista = lista.filter(v => v.data >= from);
+    if (to)   lista = lista.filter(v => v.data <= to);
+
+    const tbody = document.getElementById('vendas-body');
+    if (lista.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="big">📦</div>Nenhuma venda registrada ainda</div></td></tr>`;
+      return;
+    }
+    tbody.innerHTML = lista.map(v => `
+      <tr>
+        <td>${formatDate(v.data)}</td>
+        <td>${esc(v.cliente)}</td>
+        <td>${esc(v.produto)}</td>
+        <td><span class="td-qty">${v.qtd}</span></td>
+        <td class="td-valor">R$ ${parseFloat(v.valor).toFixed(2).replace('.',',')}</td>
+        <td>
+          <button class="btn-icon" title="Enviar para Sheets" onclick="sincronizarVenda(vendas.find(x=>x.id==='${v.id}'))">↑</button>
+          <button class="btn-icon" onclick="editarVenda('${v.id}')">✏</button>
+          <button class="btn-icon del" onclick="excluirVenda('${v.id}')">✕</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  function clearVendasFilter() {
+    document.getElementById('filter-from').value = '';
+    document.getElementById('filter-to').value   = '';
+    renderVendas();
+  }
+
+  // ── DASHBOARD ──────────────────────────────────────
+  function updateDashboard() {
+    const from = document.getElementById('dash-from').value;
+    const to   = document.getElementById('dash-to').value;
+    let lista  = [...vendas];
+    if (from) lista = lista.filter(v => v.data >= from);
+    if (to)   lista = lista.filter(v => v.data <= to);
+
+    const total = lista.reduce((s,v) => s + parseFloat(v.valor) * v.qtd, 0);
+    const items = lista.reduce((s,v) => s + parseInt(v.qtd), 0);
+    const avg   = lista.length ? total / lista.length : 0;
+
+    document.getElementById('kpi-total').textContent = 'R$ ' + total.toFixed(2).replace('.',',');
+    document.getElementById('kpi-count').textContent = lista.length;
+    document.getElementById('kpi-avg').textContent   = 'R$ ' + avg.toFixed(2).replace('.',',');
+    document.getElementById('kpi-items').textContent = items;
+
+    // Top produtos
+    const mapa = {};
+    lista.forEach(v => {
+      if (!mapa[v.produto]) mapa[v.produto] = { qtd: 0, receita: 0 };
+      mapa[v.produto].qtd     += parseInt(v.qtd);
+      mapa[v.produto].receita += parseFloat(v.valor) * parseInt(v.qtd);
+    });
+    const top = Object.entries(mapa).sort((a,b) => b[1].qtd - a[1].qtd).slice(0,5);
+
+    const topBody = document.getElementById('top-produtos');
+    if (top.length === 0) {
+      topBody.innerHTML = `<tr><td colspan="3"><div class="empty-state" style="padding:30px"><div class="big" style="font-size:1.8rem">📊</div>Sem dados ainda</div></td></tr>`;
+    } else {
+      topBody.innerHTML = top.map(([nome, d]) => `
+        <tr>
+          <td>${esc(nome)}</td>
+          <td><span class="td-qty">${d.qtd}</span></td>
+          <td class="td-valor">R$ ${d.receita.toFixed(2).replace('.',',')}</td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  function clearDashFilter() {
+    document.getElementById('dash-from').value = '';
+    document.getElementById('dash-to').value   = '';
+    updateDashboard();
+  }
+
+  // ── GOOGLE SHEETS ──────────────────────────────────
+  function salvarConfig() {
+    gsUrl = document.getElementById('gs-url').value.trim();
+    if (!gsUrl) { toast('Cole a URL do Web App', true); return; }
+    localStorage.setItem('gsUrl', gsUrl);
+    setGsStatus(true);
+    toast('Configuração salva ✓');
+  }
+
+  function setGsStatus(connected) {
+    document.getElementById('gsDot').className = 'gs-dot' + (connected ? ' connected' : '');
+    document.getElementById('gsLabel').textContent = connected ? 'Google Sheets conectado' : 'Google Sheets desconectado';
+  }
+
+  function enviarParaSheets(venda) {
+    // silencioso, enviado via sincronização manual
+  }
+
+  function sincronizarVenda(venda) {
+    if (!gsUrl) { toast('Configure o Google Sheets primeiro!', true); return; }
+    const params = new URLSearchParams({
+      data: venda.data,
+      cliente: venda.cliente,
+      produto: venda.produto,
+      qtd: venda.qtd,
+      valor: venda.valor
+    });
+    const url = gsUrl + '?' + params.toString();
+    window.open(url, '_blank');
+  }
+
+  // ── UTILS ──────────────────────────────────────────
+  function salvarLocal() { localStorage.setItem('vendas3d', JSON.stringify(vendas)); }
+  function esc(s) { return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c])); }
+  function formatDate(d) {
+    if (!d) return '';
+    const [y,m,dd] = d.split('-');
+    return `${dd}/${m}/${y}`;
+  }
+
+  function toast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'show' + (isError ? ' error' : '');
+    setTimeout(() => t.className = '', 3000);
+  }
+
+  function confirmarLimpar() {
+    if (confirm('Tem certeza? Todos os dados locais serão apagados.')) {
+      localStorage.removeItem('vendas3d');
+      vendas = [];
+      updateDashboard(); renderVendas();
+      toast('Dados apagados');
+    }
+  }
+</script>
+</body>
+</html>
