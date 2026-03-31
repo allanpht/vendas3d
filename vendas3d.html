@@ -1644,21 +1644,27 @@ function doGet(e) {
     `).join('');
   }
 
-  function abrirModalFilamento() {
+  function resetModalFilamento() {
     document.getElementById('fil-modal-title').textContent = 'Novo filamento';
     document.getElementById('fil-edit-id').value = '';
     document.getElementById('fil-nome').value = '';
     document.getElementById('fil-marca').value = '';
     document.getElementById('fil-material').value = 'PLA';
     document.getElementById('fil-preview').style.display = 'none';
+    document.getElementById('fil-preview').src = '';
     document.getElementById('fil-preview-icon').style.display = 'block';
     document.getElementById('fil-foto-input').value = '';
     filFotoBase64 = '';
+  }
+
+  function abrirModalFilamento() {
+    resetModalFilamento();
     document.getElementById('modal-filamento').classList.add('open');
   }
 
   function fecharModalFilamento() {
     document.getElementById('modal-filamento').classList.remove('open');
+    resetModalFilamento();
   }
 
   function previewFoto(input) {
@@ -1666,10 +1672,24 @@ function doGet(e) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = e => {
-      filFotoBase64 = e.target.result;
-      document.getElementById('fil-preview').src = filFotoBase64;
-      document.getElementById('fil-preview').style.display = 'block';
-      document.getElementById('fil-preview-icon').style.display = 'none';
+      // Redimensiona a imagem para economizar espaço no localStorage
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const max = 600;
+        let w = img.width, h = img.height;
+        if (w > max || h > max) {
+          if (w > h) { h = Math.round(h * max / w); w = max; }
+          else { w = Math.round(w * max / h); h = max; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        filFotoBase64 = canvas.toDataURL('image/jpeg', 0.7);
+        document.getElementById('fil-preview').src = filFotoBase64;
+        document.getElementById('fil-preview').style.display = 'block';
+        document.getElementById('fil-preview-icon').style.display = 'none';
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   }
