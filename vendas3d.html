@@ -886,13 +886,14 @@ function doGet(e) {
     if (!gsUrl) { toast('Configure o Google Sheets primeiro!', true); return; }
     const naoSincronizadas = vendas.filter(v => !v.synced);
     if (naoSincronizadas.length === 0) { toast('Tudo já sincronizado ✓'); return; }
-    
+
     const btn = document.getElementById('btn-sync-all');
-    btn.textContent = '⏳ Sincronizando...';
     btn.disabled = true;
 
     for (let i = 0; i < naoSincronizadas.length; i++) {
       const venda = naoSincronizadas[i];
+      btn.textContent = '⏳ ' + (i + 1) + '/' + naoSincronizadas.length;
+
       const params = new URLSearchParams({
         id: venda.id,
         data: venda.data,
@@ -902,15 +903,20 @@ function doGet(e) {
         valor: venda.valor
       });
       const url = gsUrl + '?' + params.toString();
-      const win = window.open(url, '_blank');
-      if (win) setTimeout(() => win.close(), 2000);
+
+      // Usa a mesma aba reutilizável para evitar bloqueio do navegador
+      const win = window.open(url, 'syncTab');
+      await new Promise(r => setTimeout(r, 2500));
+      if (win && !win.closed) win.close();
+
       const idx = vendas.findIndex(x => x.id === venda.id);
       if (idx !== -1) vendas[idx].synced = true;
-      await new Promise(r => setTimeout(r, 800));
+      salvarLocal();
+      renderVendas();
+
+      await new Promise(r => setTimeout(r, 500));
     }
 
-    salvarLocal();
-    renderVendas();
     btn.textContent = '↑ Sincronizar tudo';
     btn.disabled = false;
     toast(naoSincronizadas.length + ' venda(s) sincronizada(s) ✓');
