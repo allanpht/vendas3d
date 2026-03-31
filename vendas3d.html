@@ -591,9 +591,20 @@
 
 <header>
   <div class="logo">PHT<span>.Maker</span></div>
-  <div class="gs-status">
-    <div class="gs-dot" id="gsDot"></div>
-    <span id="gsLabel">Google Sheets desconectado</span>
+  <div style="display:flex;align-items:center;gap:12px">
+    <button id="btn-privacy" onclick="togglePrivacy()" title="Ocultar valores" style="background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--muted);cursor:pointer;padding:6px 10px;display:flex;align-items:center;transition:all 0.2s">
+      <svg id="privacy-icon-show" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      <svg id="privacy-icon-hide" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+        <line x1="1" y1="1" x2="23" y2="23"/>
+      </svg>
+    </button>
+    <div class="gs-status">
+      <div class="gs-dot" id="gsDot"></div>
+      <span id="gsLabel">Google Sheets desconectado</span>
+    </div>
   </div>
 </header>
 
@@ -1244,6 +1255,11 @@ function doGet(e) {
 
   // ── DASHBOARD ──────────────────────────────────────
   function updateDashboard() {
+    privacyOn = false;
+    document.getElementById('privacy-icon-show').style.display = 'block';
+    document.getElementById('privacy-icon-hide').style.display = 'none';
+    document.getElementById('btn-privacy').style.borderColor = '';
+    document.getElementById('btn-privacy').style.color = '';
     const lista = [...vendas];
 
     const total = lista.reduce((s,v) => s + parseFloat(v.valor) * v.qtd, 0);
@@ -1278,7 +1294,7 @@ function doGet(e) {
               <div style="font-size:0.75rem;color:var(--muted)">${esc(v.produto)} · ${formatDate(v.data)}</div>
             </div>
             <div style="text-align:right;flex-shrink:0">
-              <div style="color:var(--accent);font-weight:500;font-size:0.95rem">R$ ${parseFloat(v.valor).toFixed(2).replace('.',',')}</div>
+              <div class="priv-val" style="color:var(--accent);font-weight:500;font-size:0.95rem">R$ ${parseFloat(v.valor).toFixed(2).replace('.',',')}</div>
               <div style="font-size:0.72rem;color:var(--muted)">qtd ${v.qtd}</div>
             </div>
           </div>
@@ -1397,6 +1413,36 @@ function doGet(e) {
     t.textContent = msg;
     t.className = 'show' + (isError ? ' error' : '');
     setTimeout(() => t.className = '', 3000);
+  }
+
+  // ── MODO PRIVADO ──────────────────────────────────
+  let privacyOn = false;
+
+  function togglePrivacy() {
+    privacyOn = !privacyOn;
+    const els = document.querySelectorAll('.kpi-value, #dash-ultimas .priv-val');
+    // KPI values
+    document.querySelectorAll('.kpi-value').forEach(el => {
+      if (privacyOn) {
+        el.dataset.original = el.textContent;
+        el.textContent = '••••';
+      } else {
+        if (el.dataset.original) el.textContent = el.dataset.original;
+      }
+    });
+    // Last sales values
+    document.querySelectorAll('.priv-val').forEach(el => {
+      if (privacyOn) {
+        el.dataset.original = el.textContent;
+        el.textContent = '••••';
+      } else {
+        if (el.dataset.original) el.textContent = el.dataset.original;
+      }
+    });
+    document.getElementById('privacy-icon-show').style.display = privacyOn ? 'none' : 'block';
+    document.getElementById('privacy-icon-hide').style.display = privacyOn ? 'block' : 'none';
+    document.getElementById('btn-privacy').style.borderColor = privacyOn ? 'var(--accent)' : '';
+    document.getElementById('btn-privacy').style.color = privacyOn ? 'var(--accent)' : '';
   }
 
   // ── HAMBURGER ─────────────────────────────────────
