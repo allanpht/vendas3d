@@ -779,8 +779,22 @@ function doGet(e) {
     document.getElementById('gsLabel').textContent = connected ? 'Google Sheets conectado' : 'Google Sheets desconectado';
   }
 
-  function enviarParaSheets(venda) {
-    // silencioso, enviado via sincronização manual
+  async function enviarParaSheets(venda) {
+    if (!gsUrl) return;
+    const params = new URLSearchParams({
+      data: venda.data,
+      cliente: venda.cliente,
+      produto: venda.produto,
+      qtd: venda.qtd,
+      valor: venda.valor
+    });
+    const url = gsUrl + '?' + params.toString();
+    try {
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
+      console.log('Sheets: enviado');
+    } catch(e) {
+      console.warn('Sheets erro:', e);
+    }
   }
 
   function sincronizarVenda(venda) {
