@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Vendas 3D — Registro</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -487,9 +487,22 @@
     .kpi { padding: 16px; }
     .kpi-value { font-size: 1.4rem; }
 
-    /* Filtros empilhados */
-    .filter-bar { gap: 8px; }
-    .filter-bar input[type=date] { font-size: 0.72rem; padding: 7px 10px; }
+    /* Filtros mobile */
+    .filter-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 12px 14px;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .filter-bar label { font-size: 0.7rem; min-width: 24px; }
+    .filter-bar input[type=date] {
+      flex: 1;
+      font-size: 0.78rem;
+      padding: 8px 10px;
+      min-width: 0;
+    }
     #btn-sync-all { margin-left: 0 !important; width: 100%; justify-content: center; margin-top: 4px; }
 
     /* Tabela vira cards */
@@ -637,18 +650,11 @@
       <button class="btn-icon" onclick="clearDashFilter()">Limpar filtro</button>
     </div>
 
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Produto mais vendido</th>
-            <th>Qtd total</th>
-            <th>Receita</th>
-          </tr>
-        </thead>
-        <tbody id="top-produtos"></tbody>
-      </table>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Últimas vendas</span>
+      <button class="btn-icon" onclick="showTab('vendas', document.querySelectorAll('.mobile-nav button')[1])" style="font-size:0.72rem;padding:4px 10px">Ver todas →</button>
     </div>
+    <div id="dash-ultimas"></div>
   </div>
 
   <!-- LISTA DE VENDAS -->
@@ -968,17 +974,26 @@ function doGet(e) {
     });
     const top = Object.entries(mapa).sort((a,b) => b[1].qtd - a[1].qtd).slice(0,5);
 
-    const topBody = document.getElementById('top-produtos');
-    if (top.length === 0) {
-      topBody.innerHTML = `<tr><td colspan="3"><div class="empty-state" style="padding:30px"><div class="big" style="font-size:1.8rem">📊</div>Sem dados ainda</div></td></tr>`;
-    } else {
-      topBody.innerHTML = top.map(([nome, d]) => `
-        <tr>
-          <td>${esc(nome)}</td>
-          <td><span class="td-qty">${d.qtd}</span></td>
-          <td class="td-valor">R$ ${d.receita.toFixed(2).replace('.',',')}</td>
-        </tr>
-      `).join('');
+    // Últimas 4 vendas
+    const ultimas = [...lista].sort((a,b) => b.data.localeCompare(a.data)).slice(0,4);
+    const ul = document.getElementById('dash-ultimas');
+    if (ul) {
+      if (ultimas.length === 0) {
+        ul.innerHTML = '<div class="empty-state" style="padding:30px"><div class="big" style="font-size:1.8rem">📦</div>Nenhuma venda ainda</div>';
+      } else {
+        ul.innerHTML = ultimas.map(v => `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+            <div>
+              <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:0.9rem;margin-bottom:3px">${esc(v.cliente)}</div>
+              <div style="font-size:0.75rem;color:var(--muted)">${esc(v.produto)} · ${formatDate(v.data)}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div style="color:var(--accent);font-weight:500;font-size:0.95rem">R$ ${parseFloat(v.valor).toFixed(2).replace('.',',')}</div>
+              <div style="font-size:0.72rem;color:var(--muted)">qtd ${v.qtd}</div>
+            </div>
+          </div>
+        `).join('');
+      }
     }
   }
 
