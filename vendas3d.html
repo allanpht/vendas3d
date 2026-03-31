@@ -1452,11 +1452,15 @@ function doGet(e) {
   function toggleHamburger() {
     const panel = document.getElementById('hamburger-panel');
     const overlay = document.getElementById('hamburger-overlay');
+    if (!panel) return;
     const open = panel.style.display === 'none' || panel.style.display === '';
     panel.style.display = open ? 'block' : 'none';
     overlay.style.display = open ? 'block' : 'none';
-    document.getElementById('mnav-menu').querySelector('.nav-circle').style.borderColor = open ? 'var(--accent)' : '';
-    document.getElementById('mnav-menu').querySelector('.nav-circle').style.color = open ? 'var(--accent)' : '';
+    const mnavMenu = document.getElementById('mnav-menu');
+    if (mnavMenu) {
+      mnavMenu.querySelector('.nav-circle').style.borderColor = open ? 'var(--accent)' : '';
+      mnavMenu.querySelector('.nav-circle').style.color = open ? 'var(--accent)' : '';
+    }
   }
 
   // ── LOGIN ─────────────────────────────────────────
