@@ -1112,6 +1112,7 @@ function doGet(e) {
   let vendas = JSON.parse(localStorage.getItem('vendas3d') || '[]');
   let gsUrl = localStorage.getItem('gsUrl') || '';
   let deleteTarget = null;
+  let privacyOn = false;
 
   // ── INIT ───────────────────────────────────────────
   document.getElementById('f-data').value = today();
@@ -1430,8 +1431,6 @@ function doGet(e) {
   }
 
   // ── MODO PRIVADO ──────────────────────────────────
-  let privacyOn = false;
-
   function togglePrivacy() {
     privacyOn = !privacyOn;
     const els = document.querySelectorAll('.kpi-value, #dash-ultimas .priv-val');
@@ -1563,28 +1562,33 @@ function doGet(e) {
   function processarImport() {
     const texto = document.getElementById('import-paste').value.trim();
     if (!texto) { toast('Cole os dados primeiro!', true); return; }
+    let importadas;
     try {
-      const importadas = JSON.parse(texto);
-      if (!Array.isArray(importadas)) throw new Error('Formato inválido');
-      vendas = importadas.map(v => ({
-        id: String(v.id),
-        data: v.data ? String(v.data).split('T')[0] : '',
-        cliente: v.cliente || '',
-        produto: v.produto || '',
-        qtd: v.qtd || 1,
-        valor: v.valor || 0,
-        synced: true
-      }));
-      salvarLocal();
-      updateDashboard();
-      renderVendas();
-      document.getElementById('modal-import').classList.remove('open');
-      document.getElementById('import-paste').value = '';
-      sessionStorage.setItem('importSkipped', 'sim');
-      toast(vendas.length + ' venda(s) sincronizada(s) ✓');
+      importadas = JSON.parse(texto);
     } catch(e) {
       toast('Dados inválidos — tente copiar novamente', true);
+      return;
     }
+    if (!Array.isArray(importadas)) {
+      toast('Formato inválido — tente copiar novamente', true);
+      return;
+    }
+    vendas = importadas.map(v => ({
+      id: String(v.id),
+      data: v.data ? String(v.data).split('T')[0] : '',
+      cliente: v.cliente || '',
+      produto: v.produto || '',
+      qtd: Number(v.qtd) || 1,
+      valor: Number(v.valor) || 0,
+      synced: true
+    }));
+    salvarLocal();
+    updateDashboard();
+    renderVendas();
+    document.getElementById('modal-import').classList.remove('open');
+    document.getElementById('import-paste').value = '';
+    sessionStorage.setItem('importSkipped', 'sim');
+    toast(vendas.length + ' venda(s) sincronizada(s) ✓');
   }
 
   // Mostra popup de importação ao abrir (uma vez por sessão)
