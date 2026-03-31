@@ -21,6 +21,47 @@
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* LOGIN */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+  }
+  #login-screen.hidden { display: none; }
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px 44px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  .login-logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 2rem;
+    letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .login-logo span { color: var(--accent); }
+  .login-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    margin-bottom: 32px;
+  }
+  .login-card .field { text-align: left; margin-bottom: 16px; }
+  .login-error {
+    font-size: 0.75rem;
+    color: var(--danger);
+    margin-top: 10px;
+    min-height: 18px;
+  }
+
   body {
     background: var(--bg);
     color: var(--text);
@@ -398,6 +439,20 @@
 </head>
 <body>
 
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">Vendas<span>3D</span></div>
+    <div class="login-sub">Sistema de registro de vendas</div>
+    <div class="field">
+      <label>Senha de acesso</label>
+      <input type="password" id="login-input" placeholder="Digite a senha" onkeydown="if(event.key==='Enter') tentarLogin()">
+    </div>
+    <button class="btn-primary" onclick="tentarLogin()">Entrar</button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
 <header>
   <div class="logo">Vendas<span>3D</span></div>
   <div class="gs-status">
@@ -550,6 +605,28 @@ function doGet(e) {
         <input type="url" id="gs-url" placeholder="https://script.google.com/macros/s/...">
       </div>
       <button class="btn-primary" onclick="salvarConfig()">Salvar configuração</button>
+    </div>
+
+    <div class="config-card">
+      <h3>Alterar senha de acesso</h3>
+      <p>A senha padrão é <strong style="color:var(--accent)">vendas3d</strong>. Troque por uma senha pessoal.</p>
+      <div class="field">
+        <label>Nova senha</label>
+        <input type="password" id="nova-senha" placeholder="Digite a nova senha">
+      </div>
+      <div class="field">
+        <label>Confirmar nova senha</label>
+        <input type="password" id="confirma-senha" placeholder="Repita a nova senha">
+      </div>
+      <button class="btn-primary" onclick="
+        const s = document.getElementById('nova-senha').value;
+        const c = document.getElementById('confirma-senha').value;
+        if (!s) { toast('Digite uma senha', true); return; }
+        if (s !== c) { toast('As senhas não coincidem', true); return; }
+        alterarSenha(s);
+        document.getElementById('nova-senha').value = '';
+        document.getElementById('confirma-senha').value = '';
+      ">Salvar nova senha</button>
     </div>
 
     <div class="config-card">
@@ -854,6 +931,36 @@ function doGet(e) {
     t.className = 'show' + (isError ? ' error' : '');
     setTimeout(() => t.className = '', 3000);
   }
+
+  // ── LOGIN ─────────────────────────────────────────
+  const SENHA = localStorage.getItem('senha3d') || 'vendas3d';
+
+  function verificarLogin() {
+    const logado = sessionStorage.getItem('logado3d');
+    if (logado === 'sim') {
+      document.getElementById('login-screen').classList.add('hidden');
+    }
+  }
+
+  function tentarLogin() {
+    const input = document.getElementById('login-input').value;
+    if (input === SENHA) {
+      sessionStorage.setItem('logado3d', 'sim');
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('login-error').textContent = '';
+    } else {
+      document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
+      document.getElementById('login-input').value = '';
+      document.getElementById('login-input').focus();
+    }
+  }
+
+  function alterarSenha(novaSenha) {
+    localStorage.setItem('senha3d', novaSenha);
+    toast('Senha alterada ✓');
+  }
+
+  verificarLogin();
 
   function confirmarLimpar() {
     if (confirm('Tem certeza? Todos os dados locais serão apagados.')) {
