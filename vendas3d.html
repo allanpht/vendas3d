@@ -797,6 +797,10 @@ function doGet(e) {
     <div id="import-step-2" style="display:none">
       <p style="color:var(--muted);font-size:0.82rem;line-height:1.6;margin-bottom:12px">Cole os dados copiados abaixo:</p>
       <textarea id="import-paste" placeholder="Cole aqui o conteúdo copiado..." style="width:100%;height:90px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:0.78rem;padding:10px;outline:none;resize:none"></textarea>
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;font-size:0.78rem;color:var(--muted)">
+        <input type="checkbox" id="import-substituir" style="accent-color:var(--accent);width:16px;height:16px">
+        Substituir todos os dados locais pelo Sheets
+      </label>
       <div class="modal-btns" style="margin-top:12px">
         <button class="btn-secondary" style="margin:0" onclick="voltarStep1()">Voltar</button>
         <button class="btn-primary" style="margin:0" onclick="processarImport()">Importar</button>
@@ -1172,31 +1176,37 @@ function doGet(e) {
   function processarImport() {
     const texto = document.getElementById('import-paste').value.trim();
     if (!texto) { toast('Cole os dados primeiro!', true); return; }
+    const substituir = document.getElementById('import-substituir').checked;
     try {
       const importadas = JSON.parse(texto);
       if (!Array.isArray(importadas)) throw new Error('Formato inválido');
-      let novas = 0;
-      importadas.forEach(v => {
-        if (v.id && !vendas.find(x => x.id === String(v.id))) {
-          vendas.push({
-            id: String(v.id),
-            data: v.data ? String(v.data).split('T')[0] : '',
-            cliente: v.cliente || '',
-            produto: v.produto || '',
-            qtd: v.qtd || 1,
-            valor: v.valor || 0,
-            synced: true
-          });
-          novas++;
-        }
-      });
+      const normalizadas = importadas.map(v => ({
+        id: String(v.id),
+        data: v.data ? String(v.data).split('T')[0] : '',
+        cliente: v.cliente || '',
+        produto: v.produto || '',
+        qtd: v.qtd || 1,
+        valor: v.valor || 0,
+        synced: true
+      }));
+      if (substituir) {
+        vendas = normalizadas;
+      } else {
+        let novas = 0;
+        normalizadas.forEach(v => {
+          if (!vendas.find(x => x.id === v.id)) {
+            vendas.push(v); novas++;
+          }
+        });
+      }
       salvarLocal();
       updateDashboard();
       renderVendas();
       document.getElementById('modal-import').classList.remove('open');
       document.getElementById('import-paste').value = '';
+      document.getElementById('import-substituir').checked = false;
       sessionStorage.setItem('importSkipped', 'sim');
-      toast(novas > 0 ? novas + ' venda(s) importada(s) ✓' : 'Tudo já estava atualizado ✓');
+      toast(substituir ? normalizadas.length + ' venda(s) sincronizada(s) ✓' : 'Dados importados ✓');
     } catch(e) {
       toast('Dados inválidos — tente copiar novamente', true);
     }
