@@ -621,7 +621,7 @@ function doGet(e) {
 
     if (editId) {
       const idx = vendas.findIndex(v => v.id === editId);
-      if (idx !== -1) vendas[idx] = venda;
+      if (idx !== -1) vendas[idx] = { ...venda, synced: false };
       cancelarEdicao();
       toast('Venda atualizada ✓');
     } else {
