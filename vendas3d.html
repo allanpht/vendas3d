@@ -435,6 +435,128 @@
   }
   .modal-btns { display: flex; gap: 12px; margin-top: 24px; }
   .modal-btns button { flex: 1; }
+
+  /* ── MOBILE ─────────────────────────────────────── */
+  @media (max-width: 640px) {
+
+    /* Header compacto */
+    header { padding: 16px 20px; }
+    .logo { font-size: 1.1rem; }
+    .gs-status span { display: none; }
+
+    /* Esconde tabs do topo, mostra nav inferior */
+    .tabs { display: none; }
+
+    /* Nav inferior estilo app */
+    .mobile-nav {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(13,13,13,0.97);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .mobile-nav button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      font-family: 'Syne', sans-serif;
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 10px 4px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+    }
+    .mobile-nav button .nav-icon { font-size: 1.2rem; line-height: 1; }
+    .mobile-nav button.active { color: var(--accent); }
+
+    /* Main com padding inferior para nav */
+    main { padding: 20px 16px 100px; }
+
+    /* KPI grid 2 colunas */
+    .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .kpi { padding: 16px; }
+    .kpi-value { font-size: 1.4rem; }
+
+    /* Filtros empilhados */
+    .filter-bar { gap: 8px; }
+    .filter-bar input[type=date] { font-size: 0.72rem; padding: 7px 10px; }
+    #btn-sync-all { margin-left: 0 !important; width: 100%; justify-content: center; margin-top: 4px; }
+
+    /* Tabela vira cards */
+    .table-wrap { background: transparent; border: none; border-radius: 0; }
+    table, thead, tbody, th, td, tr { display: block; }
+    thead { display: none; }
+    tbody tr {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      padding: 14px 16px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 2px 12px;
+    }
+    tbody tr td { padding: 0; border: none; font-size: 0.8rem; }
+    tbody tr td:nth-child(1) { /* data */
+      font-size: 0.7rem; color: var(--muted);
+      grid-column: 1; grid-row: 1;
+    }
+    tbody tr td:nth-child(2) { /* cliente */
+      font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+      grid-column: 1; grid-row: 2;
+    }
+    tbody tr td:nth-child(3) { /* produto */
+      color: var(--muted); font-size: 0.78rem;
+      grid-column: 1; grid-row: 3;
+    }
+    tbody tr td:nth-child(4) { /* qtd */
+      grid-column: 2; grid-row: 1;
+      text-align: right;
+    }
+    tbody tr td:nth-child(5) { /* valor */
+      grid-column: 2; grid-row: 2;
+      text-align: right; font-size: 1rem;
+    }
+    tbody tr td:nth-child(6) { /* ações */
+      grid-column: 1 / -1; grid-row: 4;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .btn-icon { padding: 7px 12px; font-size: 0.85rem; }
+
+    /* Formulário */
+    .form-card { padding: 20px 16px; border-radius: var(--radius); }
+    .field-row { grid-template-columns: 1fr 1fr; }
+    .field input, .field select { font-size: 1rem; padding: 13px 14px; }
+    .btn-primary { padding: 16px; font-size: 0.9rem; }
+
+    /* Config */
+    .config-card { padding: 20px 16px; }
+
+    /* Modal */
+    .modal { padding: 24px 20px; }
+
+    /* Toast acima da nav */
+    #toast { bottom: 90px; left: 16px; right: 16px; text-align: center; }
+
+    /* Login */
+    .login-card { padding: 32px 24px; margin: 16px; }
+  }
+
+  @media (min-width: 641px) {
+    .mobile-nav { display: none; }
+  }
 </style>
 </head>
 <body>
@@ -460,6 +582,22 @@
     <span id="gsLabel">Google Sheets desconectado</span>
   </div>
 </header>
+
+<!-- MOBILE NAV -->
+<nav class="mobile-nav" id="mobile-nav">
+  <button class="active" onclick="showTab('dashboard', this)">
+    <span class="nav-icon">📊</span>Dashboard
+  </button>
+  <button onclick="showTab('vendas', this)">
+    <span class="nav-icon">📋</span>Vendas
+  </button>
+  <button onclick="showTab('nova', this)">
+    <span class="nav-icon">＋</span>Nova
+  </button>
+  <button onclick="showTab('config', this)">
+    <span class="nav-icon">⚙</span>Config
+  </button>
+</nav>
 
 <nav class="tabs">
   <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
@@ -674,11 +812,18 @@ function doGet(e) {
   }
 
   // ── TABS ───────────────────────────────────────────
-  function showTab(id) {
+  function showTab(id, el) {
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav button').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + id).classList.add('active');
-    event.target.classList.add('active');
+    if (el) el.classList.add('active');
+    // sync desktop tab
+    const tabIdx = ['dashboard','vendas','nova','config'].indexOf(id);
+    if (tabIdx !== -1) {
+      const tabs = document.querySelectorAll('.tab');
+      if (tabs[tabIdx]) tabs[tabIdx].classList.add('active');
+    }
   }
 
   // ── SALVAR VENDA ───────────────────────────────────
@@ -743,6 +888,7 @@ function doGet(e) {
     document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-nova').classList.add('active');
     document.querySelectorAll('.tab')[2].classList.add('active');
+    document.querySelectorAll('.mobile-nav button').forEach((b,i) => b.classList.toggle('active', i===2));
   }
 
   // ── EXCLUIR ────────────────────────────────────────
