@@ -608,6 +608,9 @@
   <button onclick="showTab('nova', this)">
     <span class="nav-icon">＋</span>Nova
   </button>
+  <button onclick="showTab('calc', this)">
+    <span class="nav-icon">🧮</span>Calc
+  </button>
   <button onclick="showTab('config', this)">
     <span class="nav-icon">⚙</span>Config
   </button>
@@ -617,6 +620,7 @@
   <button class="tab active" onclick="showTab('dashboard')">Dashboard</button>
   <button class="tab" onclick="showTab('vendas')">Vendas</button>
   <button class="tab" onclick="showTab('nova')">+ Nova Venda</button>
+  <button class="tab" onclick="showTab('calc')">Calculadora</button>
   <button class="tab" onclick="showTab('config')">Configuração</button>
 </nav>
 
@@ -708,6 +712,141 @@
 
       <button class="btn-primary" onclick="salvarVenda()" id="btn-salvar">Registrar venda</button>
       <button class="btn-secondary" id="btn-cancelar-edit" style="display:none" onclick="cancelarEdicao()">Cancelar edição</button>
+    </div>
+  </div>
+
+  <!-- CALCULADORA -->
+  <div class="panel" id="tab-calc">
+    <style>
+      .calc-wrap { max-width: 560px; }
+      .calc-section-label { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
+      .calc-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 16px; }
+      .calc-field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+      .calc-field-row:last-child { margin-bottom: 0; }
+      .calc-field-label { font-size: 0.78rem; color: var(--text); flex: 1; }
+      .calc-field-sub { font-size: 0.68rem; color: var(--muted); }
+      .calc-input-wrap { display: flex; align-items: center; gap: 6px; }
+      .calc-input-wrap input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: 'Montserrat', sans-serif; font-size: 0.9rem; padding: 8px 10px; width: 90px; text-align: right; outline: none; transition: border-color 0.2s; }
+      .calc-input-wrap input:focus { border-color: var(--accent); }
+      .calc-unit { font-size: 0.72rem; color: var(--muted); min-width: 32px; }
+      .calc-margin-btns { display: flex; gap: 8px; }
+      .calc-mbtn { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.82rem; padding: 10px; cursor: pointer; transition: all 0.2s; }
+      .calc-mbtn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+      .calc-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+      .calc-metric { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+      .calc-metric-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+      .calc-metric-value { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.88rem; }
+      .calc-brow { display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; padding: 7px 0; border-bottom: 1px solid var(--border); }
+      .calc-brow:last-child { border-bottom: none; }
+      .calc-brow.total { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 0.82rem; color: var(--accent); padding-top: 10px; }
+      .calc-price-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0 10px; }
+      .calc-price-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; text-align: center; }
+      .calc-price-box-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+      .calc-price-box-value { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 1.3rem; color: var(--accent); letter-spacing: -0.02em; }
+      .calc-price-box-rounded { font-size: 0.68rem; color: var(--muted); margin-top: 4px; }
+      .calc-tip { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 6px; }
+      .calc-note { font-size: 0.65rem; color: var(--muted); text-align: center; margin-top: 8px; opacity: 0.6; }
+      @media (max-width: 640px) {
+        .calc-metrics { grid-template-columns: repeat(3,1fr); gap: 8px; }
+        .calc-metric-value { font-size: 0.75rem; }
+        .calc-input-wrap input { width: 76px; }
+      }
+    </style>
+    <div class="calc-wrap">
+      <div class="calc-card">
+        <p class="calc-section-label">Parâmetros da peça</p>
+        <div class="calc-field-row">
+          <div>
+            <div class="calc-field-label">Filamento usado</div>
+          </div>
+          <div class="calc-input-wrap">
+            <input type="number" id="c-filament" value="50" min="0" step="1" oninput="calcPreco()">
+            <span class="calc-unit">g</span>
+          </div>
+        </div>
+        <div class="calc-field-row">
+          <div>
+            <div class="calc-field-label">Tempo de impressão</div>
+          </div>
+          <div class="calc-input-wrap">
+            <input type="number" id="c-hours" value="3" min="0" step="1" oninput="calcPreco()">
+            <span class="calc-unit">h</span>
+          </div>
+        </div>
+        <div class="calc-field-row">
+          <div>
+            <div class="calc-field-label">Quantidade de peças</div>
+          </div>
+          <div class="calc-input-wrap">
+            <input type="number" id="c-qty" value="1" min="1" step="1" oninput="calcPreco()">
+            <span class="calc-unit">un</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="calc-card">
+        <p class="calc-section-label">Margem de lucro</p>
+        <div class="calc-margin-btns">
+          <button class="calc-mbtn" id="cbtn-50" onclick="setCalcMargin(50)">50%</button>
+          <button class="calc-mbtn" id="cbtn-100" onclick="setCalcMargin(100)">100%</button>
+          <button class="calc-mbtn active" id="cbtn-200" onclick="setCalcMargin(200)">200%</button>
+        </div>
+      </div>
+
+      <div class="calc-metrics">
+        <div class="calc-metric">
+          <div class="calc-metric-label">Filamento</div>
+          <div class="calc-metric-value" id="cr-filament">—</div>
+        </div>
+        <div class="calc-metric">
+          <div class="calc-metric-label">Energia</div>
+          <div class="calc-metric-value" id="cr-energy">—</div>
+        </div>
+        <div class="calc-metric">
+          <div class="calc-metric-label">Custo total</div>
+          <div class="calc-metric-value" id="cr-total">—</div>
+        </div>
+      </div>
+
+      <div class="calc-card">
+        <div class="calc-brow"><span>Custo filamento</span><span id="cb-filament">—</span></div>
+        <div class="calc-brow"><span>Custo energia</span><span id="cb-energy">—</span></div>
+        <div class="calc-brow"><span id="cb-margin-label">Margem (200%)</span><span id="cb-margin">—</span></div>
+        <div class="calc-brow total"><span>Preço de venda</span></div>
+        <div class="calc-price-duo">
+          <div class="calc-price-box">
+            <div class="calc-price-box-label">Guaranis</div>
+            <div class="calc-price-box-value" id="cp-gs">—</div>
+            <div class="calc-price-box-rounded">Arred: <span id="cp-gs-r">—</span></div>
+          </div>
+          <div class="calc-price-box">
+            <div class="calc-price-box-label">Reais</div>
+            <div class="calc-price-box-value" id="cp-brl">—</div>
+            <div class="calc-price-box-rounded">Arred: <span id="cp-brl-r">—</span></div>
+          </div>
+        </div>
+        <p class="calc-tip">Lucro por peça: <span id="cb-profit">—</span></p>
+        <p class="calc-note">R$ 1 = Gs. 1.244 · ANDE CDE: Gs. 380/kWh · Filamento: R$ 120/kg</p>
+      </div>
+
+      <div id="calc-unit-section" style="display:none">
+        <div class="calc-card">
+          <p class="calc-section-label">Preço por unidade</p>
+          <div class="calc-price-duo">
+            <div class="calc-price-box">
+              <div class="calc-price-box-label">Guaranis</div>
+              <div class="calc-price-box-value" id="cu-gs">—</div>
+              <div class="calc-price-box-rounded">Arred: <span id="cu-gs-r">—</span></div>
+            </div>
+            <div class="calc-price-box">
+              <div class="calc-price-box-label">Reais</div>
+              <div class="calc-price-box-value" id="cu-brl">—</div>
+              <div class="calc-price-box-rounded">Arred: <span id="cu-brl-r">—</span></div>
+            </div>
+          </div>
+          <p class="calc-tip">Lucro por unidade: <span id="cu-profit">—</span></p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -862,7 +1001,7 @@ function doGet(e) {
     document.getElementById('tab-' + id).classList.add('active');
     if (el) el.classList.add('active');
     // sync desktop tab
-    const tabIdx = ['dashboard','vendas','nova','config'].indexOf(id);
+    const tabIdx = ['dashboard','vendas','nova','calc','config'].indexOf(id);
     if (tabIdx !== -1) {
       const tabs = document.querySelectorAll('.tab');
       if (tabs[tabIdx]) tabs[tabIdx].classList.add('active');
@@ -1263,6 +1402,70 @@ function doGet(e) {
       }, 800);
     }
   }
+
+  // ── CALCULADORA ───────────────────────────────────
+  const C_BRL_TO_GS = 1244;
+  const C_ANDE_RATE = 380;
+  const C_SPOOL_BRL = 120;
+  const C_WATTAGE   = 150;
+  let calcMargin = 200;
+
+  function setCalcMargin(v) {
+    calcMargin = v;
+    [50, 100, 200].forEach(m => {
+      document.getElementById('cbtn-' + m).classList.toggle('active', m === v);
+    });
+    calcPreco();
+  }
+
+  function fmtGs(v) { return 'Gs. ' + Math.round(v).toLocaleString('es-PY'); }
+  function fmtBrl(v) { return 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+  function roundGs(v) { return v < 1000 ? Math.ceil(v/100)*100 : Math.ceil(v/1000)*1000; }
+  function roundBrl(v) { return Math.ceil(v*2)/2; }
+
+  function calcPreco() {
+    const filamentUsed = parseFloat(document.getElementById('c-filament').value) || 0;
+    const hours        = parseFloat(document.getElementById('c-hours').value) || 0;
+    const qty          = Math.max(1, parseInt(document.getElementById('c-qty').value) || 1);
+
+    const filamentBrl = (C_SPOOL_BRL / 1000) * filamentUsed;
+    const filamentGs  = filamentBrl * C_BRL_TO_GS;
+    const energyGs    = (C_WATTAGE / 1000) * hours * C_ANDE_RATE;
+    const totalGs     = filamentGs + energyGs;
+    const profitGs    = totalGs * (calcMargin / 100);
+    const priceGs     = totalGs + profitGs;
+    const priceBrl    = priceGs / C_BRL_TO_GS;
+
+    document.getElementById('cr-filament').textContent    = fmtGs(filamentGs);
+    document.getElementById('cr-energy').textContent      = fmtGs(energyGs);
+    document.getElementById('cr-total').textContent       = fmtGs(totalGs);
+    document.getElementById('cb-filament').textContent    = fmtBrl(filamentBrl) + ' → ' + fmtGs(filamentGs);
+    document.getElementById('cb-energy').textContent      = fmtGs(energyGs);
+    document.getElementById('cb-margin-label').textContent = 'Margem (' + calcMargin + '%)';
+    document.getElementById('cb-margin').textContent      = '+ ' + fmtGs(profitGs);
+    document.getElementById('cp-gs').textContent          = fmtGs(priceGs);
+    document.getElementById('cp-brl').textContent         = fmtBrl(priceBrl);
+    document.getElementById('cp-gs-r').textContent        = fmtGs(roundGs(priceGs));
+    document.getElementById('cp-brl-r').textContent       = fmtBrl(roundBrl(priceBrl));
+    document.getElementById('cb-profit').textContent      = fmtGs(profitGs) + ' / ' + fmtBrl(profitGs / C_BRL_TO_GS);
+
+    const unitSection = document.getElementById('calc-unit-section');
+    if (qty > 1) {
+      unitSection.style.display = 'block';
+      const unitGs  = priceGs / qty;
+      const unitBrl = priceBrl / qty;
+      const unitProfit = profitGs / qty;
+      document.getElementById('cu-gs').textContent    = fmtGs(unitGs);
+      document.getElementById('cu-brl').textContent   = fmtBrl(unitBrl);
+      document.getElementById('cu-gs-r').textContent  = fmtGs(roundGs(unitGs));
+      document.getElementById('cu-brl-r').textContent = fmtBrl(roundBrl(unitBrl));
+      document.getElementById('cu-profit').textContent = fmtGs(unitProfit) + ' / ' + fmtBrl(unitProfit / C_BRL_TO_GS);
+    } else {
+      unitSection.style.display = 'none';
+    }
+  }
+
+  calcPreco();
 
   function confirmarLimpar() {
     if (confirm('Tem certeza? Todos os dados locais serão apagados.')) {
