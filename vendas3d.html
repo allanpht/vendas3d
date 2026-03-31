@@ -796,7 +796,10 @@ function doGet(e) {
     </div>
     <div id="import-step-2" style="display:none">
       <p style="color:var(--muted);font-size:0.82rem;line-height:1.6;margin-bottom:12px">Cole os dados copiados abaixo:</p>
-      <textarea id="import-paste" placeholder="Cole aqui o conteúdo copiado..." style="width:100%;height:90px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:0.78rem;padding:10px;outline:none;resize:none"></textarea>
+      <div style="position:relative">
+        <textarea id="import-paste" placeholder="Cole aqui o conteúdo copiado..." style="width:100%;height:90px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Montserrat',sans-serif;font-size:0.78rem;padding:10px;padding-right:44px;outline:none;resize:none"></textarea>
+        <button onclick="colarTexto()" title="Colar" style="position:absolute;top:8px;right:8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:5px 9px;font-size:1rem;transition:all 0.2s" onmouseover="this.style.color='var(--accent)';this.style.borderColor='var(--accent)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">📋</button>
+      </div>
       <label style="display:flex;align-items:center;gap:8px;margin-top:12px;cursor:pointer;font-size:0.78rem;color:var(--muted)">
         <input type="checkbox" id="import-substituir" style="accent-color:var(--accent);width:16px;height:16px">
         Substituir todos os dados locais pelo Sheets
@@ -880,6 +883,7 @@ function doGet(e) {
     } else {
       vendas.push(venda);
       toast('Venda registrada ✓');
+      setTimeout(() => sincronizarVendaSilenciosa(venda), 300);
     }
 
     salvarLocal();
@@ -1036,6 +1040,20 @@ function doGet(e) {
 
 
 
+  function sincronizarVendaSilenciosa(venda) {
+    if (!gsUrl) return;
+    const params = new URLSearchParams({
+      id: venda.id, data: venda.data, cliente: venda.cliente,
+      produto: venda.produto, qtd: venda.qtd, valor: venda.valor
+    });
+    const win = window.open(gsUrl + '?' + params.toString(), 'syncTab');
+    setTimeout(() => {
+      if (win && !win.closed) win.close();
+      const idx = vendas.findIndex(x => x.id === venda.id);
+      if (idx !== -1) { vendas[idx].synced = true; salvarLocal(); renderVendas(); }
+    }, 2500);
+  }
+
   function sincronizarVenda(venda) {
     if (!gsUrl) { toast('Configure o Google Sheets primeiro!', true); return; }
     const params = new URLSearchParams({
@@ -1171,6 +1189,15 @@ function doGet(e) {
     window.open(url, '_blank');
     document.getElementById('import-step-1').style.display = 'none';
     document.getElementById('import-step-2').style.display = 'block';
+  }
+
+  async function colarTexto() {
+    try {
+      const texto = await navigator.clipboard.readText();
+      document.getElementById('import-paste').value = texto;
+    } catch(e) {
+      toast('Não foi possível acessar a área de transferência', true);
+    }
   }
 
   function processarImport() {
